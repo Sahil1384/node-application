@@ -30,13 +30,21 @@ jobs:
         run: |
           echo "${PRIVATE_KEY}" > my-ssh-key.pem
           chmod 600 my-ssh-key.pem
-          ssh-keyscan -H "${HOSTNAME}" >> ~/.ssh/known_hosts
-          ssh -i my-ssh-key.pem ${{ secrets.USER_NAME }}@${HOSTNAME} '
+
+          # Create the ~/.ssh directory in the ubuntu user's home directory
+          mkdir -p /home/ubuntu/.ssh
+
+          # Add the hostname to known_hosts in the ubuntu user's home directory
+          ssh-keyscan -H "${HOSTNAME}" >> /home/ubuntu/.ssh/known_hosts
+
+          # SSH into the instance as the ubuntu user
+          ssh -i my-ssh-key.pem ${USER_NAME}@${HOSTNAME} '
               cd /var/www/html/ &&
               rm -rf node-application &&
               git clone git@github.com:Sahil1384/node-application.git &&
               cd /var/www/html/node-application &&
-              npm install &&
-              npm run build &&
-              npm run start
+              /usr/local/bin/npm install &&
+              /usr/local/bin/npm run build &&
+              /usr/local/bin/npm run start
           '
+
