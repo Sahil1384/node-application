@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: SSH to instance
+      - name: SSH to instance and add to known hosts
         env:
           PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           HOSTNAME: ${{ secrets.SSH_HOST }}
@@ -30,12 +30,4 @@ jobs:
         run: |
           echo "${PRIVATE_KEY}" > my-ssh-key.pem
           chmod 600 my-ssh-key.pem
-          ssh -o StrictHostKeyChecking=no -i my-ssh-key.pem ${{ secrets.USER_NAME }}@${HOSTNAME} '
-              cd /var/www/html/ &&
-              rm -rf node-application &&
-              git clone git@github.com:Sahil1384/node-application.git &&
-              cd /var/www/html/node-application &&
-              npm install &&
-              npm run build &&
-              npm run start
-          '
+          ssh-keyscan -H "${HOSTNAME}" >> ~/.ssh/known_h
