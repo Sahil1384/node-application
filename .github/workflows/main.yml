@@ -7,7 +7,6 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -15,21 +14,21 @@ jobs:
         node-version: [20.x]
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v2
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
 
-    - name:  SSH to instance
-       env:
-            PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-            HOSTNAME: ${{ secrets.SSH_HOST }}
-            USER_NAME: ${{secrets.USER_NAME}}
+      - name: SSH to instance
+        env:
+          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          HOSTNAME: ${{ secrets.SSH_HOST }}
+          USER_NAME: ${{ secrets.USER_NAME }}
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > my-ssh-key.pem
+          echo "${PRIVATE_KEY}" > my-ssh-key.pem
           chmod 600 my-ssh-key.pem
           ssh -o StrictHostKeyChecking=no -i my-ssh-key.pem ${{ secrets.USER_NAME }}@${HOSTNAME} '
               cd /var/www/html/ &&
@@ -39,4 +38,4 @@ jobs:
               npm install &&
               npm run build &&
               npm run start
-              '
+          '
