@@ -1,4 +1,17 @@
-name: Node.js CI
+
+name: Deploy to Backend to Prod Env
+
+# Github Action for deploying an application to an EC2 instance directly using SSH.
+# This workflow automates the deployment process to your EC2 instance running Ubuntu.
+# It assumes that you have already set up your EC2 instance, SSH key pair, and GitHub Secrets.
+# Define AWS credentials as GitHub Secrets: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
+
+
+# Environment Variables Needed:
+# - AWS_ACCESS_KEY_ID: Your AWS access key ID
+# - AWS_SECRET_ACCESS_KEY: Your AWS secret access key
+# - SSH_PRIVATE_KEY: Your SSH private key used for authentication with the EC2 instance
+# - SSH_HOST: The hostname or IP address of your EC2 instance
 
 on:
   push:
@@ -6,45 +19,43 @@ on:
       - main
 
 jobs:
-  build:
+  deploy_web_app:
     runs-on: ubuntu-latest
-
+    environment: Prod
     strategy:
       matrix:
-        node-version: [20.x]
+        max-parallel: [2]
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v2
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
+        
+      - name: Add public IP to AWS security group for Web App
+        uses: sohelamin/aws-security-group-add-ip-action@master
         with:
-          node-version: ${{ matrix.node-version }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: 'us-east-1'
+          aws-security-group-id: 'sg-004bae2ed02dd0ab7'
+          port: '22'
+          to-port: '22'
+          protocol: 'tcp'
+          description: 'GitHub Action'
 
-      - name: SSH to instance and add to known hosts
-        env:
-          PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          HOSTNAME: ${{ secrets.SSH_HOST }}
-          USER_NAME: ${{ secrets.USER_NAME }}
+      - name: Configure SSH for Web App
         run: |
-          echo "${PRIVATE_KEY}" > my-ssh-key.pem
-          chmod 600 my-ssh-key.pem
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo "StrictHostKeyChecking no" > ~/.ssh/config
 
-          # Create the ~/.ssh directory in the ubuntu user's home directory
-          mkdir -p /home/ubuntu/.ssh
-
-          # Add the hostname to known_hosts in the ubuntu user's home directory
-          ssh-keyscan -H "${HOSTNAME}" >> /home/ubuntu/.ssh/known_hosts
-
-          # SSH into the instance as the ubuntu user
-          ssh -i my-ssh-key.pem ${USER_NAME}@${HOSTNAME} '
-              cd /var/www/html/ &&
-              rm -rf node-application &&
-              git clone git@github.com:Sahil1384/node-application.git &&
-              cd /var/www/html/node-application &&
-              /usr/local/bin/npm install &&
-              /usr/local/bin/npm run build &&
-              /usr/local/bin/npm run start
-          '
-
+      - name: Deploy code to Web App
+        run: |
+          ssh ubuntu@${{ secrets.SSH_HOST }} "cd /home/ubuntu/test-frontend && git stash && git pull && npm install && npm run build && pm2 restart 0"
+      - name: Deployment complete
+        run: |
+           echo "------------------------------------"
+           echo "|                                  |"
+           echo "|       🚀 Deployment Complete      |"
+           echo "|                                  |"
+           echo "------------------------------------"
