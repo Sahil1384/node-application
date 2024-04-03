@@ -6,7 +6,6 @@ name: Deploy to Backend to Prod Env
 # It assumes that you have already set up your EC2 instance, SSH key pair, and GitHub Secrets.
 # Define AWS credentials as GitHub Secrets: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 
-
 # Environment Variables Needed:
 # - AWS_ACCESS_KEY_ID: Your AWS access key ID
 # - AWS_SECRET_ACCESS_KEY: Your AWS secret access key
